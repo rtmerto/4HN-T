@@ -1,8 +1,0 @@
-Package: com.4hn.storyglass
-Name: 4Hn Story Glass
-Version: 1.0.0
-Architecture: iphoneos-arm64
-Description: Blue Liquid Glass treatment for TikTok story-add controls.
-Maintainer: 4Hn
-Author: 4Hn
-Section: Tweaks
