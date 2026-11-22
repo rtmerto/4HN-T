@@ -8,10 +8,20 @@ workflows:
     scripts:
       - name: Install Git LFS and fetch the base IPA
         script: |
+          set -euo pipefail
           brew install dpkg git-lfs
           git lfs install --local
+          echo "Git LFS files tracked in this repository:"
+          git lfs ls-files || true
           git lfs pull
-          test -s "kitsunetweaks-v1.2-release[tg-@kitsunedeveloper].ipa"
+          IPA_PATH="$(find . -type f -iname '*.ipa' -size +1M -print -quit)"
+          if [ -z "$IPA_PATH" ]; then
+            echo "ERROR: No IPA larger than 1 MB was found after Git LFS pull."
+            echo "IPA files currently present:"
+            find . -type f -iname '*.ipa' -print || true
+            exit 1
+          fi
+          echo "Using base IPA: $IPA_PATH"
       - name: Install Theos
         script: |
           export THEOS="$HOME/theos"
@@ -22,8 +32,14 @@ workflows:
           make clean package FINALPACKAGE=1
       - name: Collect build outputs
         script: |
+          set -euo pipefail
           mkdir -p build/artifacts
           cp packages/*.deb build/artifacts/
-          cp "kitsunetweaks-v1.2-release[tg-@kitsunedeveloper].ipa" build/artifacts/TikTok-original.ipa
+          IPA_PATH="$(find . -type f -iname '*.ipa' -size +1M -print -quit)"
+          if [ -z "$IPA_PATH" ]; then
+            echo "ERROR: Could not find the base IPA to copy into build artifacts."
+            exit 1
+          fi
+          cp "$IPA_PATH" build/artifacts/TikTok-original.ipa
     artifacts:
       - build/artifacts/*
