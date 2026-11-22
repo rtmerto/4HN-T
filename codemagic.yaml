@@ -28,13 +28,30 @@ workflows:
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
       - name: Build the tweak package
         script: |
+          set -euo pipefail
           export THEOS="$HOME/theos"
+          MAKEFILE_PATH="$(find . -maxdepth 5 -type f -name 'Makefile' -not -path '*/.git/*' -print -quit)"
+          if [ -z "$MAKEFILE_PATH" ]; then
+            echo "ERROR: No Theos Makefile was found in the checked-out repository."
+            echo "Repository root: $PWD"
+            find . -maxdepth 4 -type f \( -name 'Makefile' -o -name 'Tweak.xm' -o -name 'control' \) -print || true
+            exit 1
+          fi
+          TWEAK_DIR="$(dirname "$MAKEFILE_PATH")"
+          echo "Building Theos project in: $TWEAK_DIR"
+          cd "$TWEAK_DIR"
           make clean package FINALPACKAGE=1
       - name: Collect build outputs
         script: |
           set -euo pipefail
           mkdir -p build/artifacts
-          cp packages/*.deb build/artifacts/
+          DEB_PATH="$(find . -maxdepth 6 -type f -path '*/packages/*.deb' -print -quit)"
+          if [ -z "$DEB_PATH" ]; then
+            echo "ERROR: Theos did not produce a .deb package."
+            find . -maxdepth 6 -type f -name '*.deb' -print || true
+            exit 1
+          fi
+          cp "$DEB_PATH" build/artifacts/
           IPA_PATH="$(find . -type f -iname '*.ipa' -size +1M -print -quit)"
           if [ -z "$IPA_PATH" ]; then
             echo "ERROR: Could not find the base IPA to copy into build artifacts."
