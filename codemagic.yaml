@@ -1,14 +1,29 @@
 workflows:
-  reassemble-ipa:
-    name: Reassemble TikTok IPA
-    instance_type: linux_x2
-    max_build_duration: 20
+  build-4hn-story-glass:
+    name: Build 4Hn Story Glass
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      xcode: latest
     scripts:
-      - name: Reassemble IPA parts
+      - name: Install Git LFS and fetch the base IPA
         script: |
-          set -eu
-          sh reassemble.sh
-          mkdir -p build/ipa
-          cp TikTok-v1.2.ipa build/ipa/TikTok-v1.2.ipa
+          brew install dpkg git-lfs
+          git lfs install --local
+          git lfs pull
+          test -s "kitsunetweaks-v1.2-release[tg-@kitsunedeveloper].ipa"
+      - name: Install Theos
+        script: |
+          export THEOS="$HOME/theos"
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+      - name: Build the tweak package
+        script: |
+          export THEOS="$HOME/theos"
+          make clean package FINALPACKAGE=1
+      - name: Collect build outputs
+        script: |
+          mkdir -p build/artifacts
+          cp packages/*.deb build/artifacts/
+          cp "kitsunetweaks-v1.2-release[tg-@kitsunedeveloper].ipa" build/artifacts/TikTok-original.ipa
     artifacts:
-      - build/ipa/*.ipa
+      - build/artifacts/*
