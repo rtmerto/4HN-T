@@ -1,0 +1,14 @@
+workflows:
+  reassemble-ipa:
+    name: Reassemble TikTok IPA
+    instance_type: linux_x2
+    max_build_duration: 20
+    scripts:
+      - name: Reassemble IPA parts
+        script: |
+          set -eu
+          sh reassemble.sh
+          mkdir -p build/ipa
+          cp TikTok-v1.2.ipa build/ipa/TikTok-v1.2.ipa
+    artifacts:
+      - build/ipa/*.ipa
